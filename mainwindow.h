@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QDateTime>
+#include "UGlobalHotkey/uglobalhotkeys.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -28,5 +29,6 @@ private:
     QDateTime tStop;
     bool running = false;
     bool ended = false;
+    UGlobalHotkeys* hotkeys;
 };
 #endif // MAINWINDOW_H

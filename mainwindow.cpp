@@ -4,6 +4,11 @@
 #include <QTimer>
 #include <QSettings>
 
+enum HOTKEY_ID {
+    ID_START=1,
+    ID_RESET,
+};
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -24,12 +29,23 @@ MainWindow::MainWindow(QWidget *parent)
 
     QTimer* timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update_timer()));
-    //timer->start(50); // would be most ideal
+    //timer->start(50); // would be ideal for 1/10th second resolution
     timer->start(100); // will use less cpu time and is still good enough
+
+    hotkeys = new UGlobalHotkeys(this);
+    hotkeys->registerHotkey(settings.value("start", "Meta+F1").toString(), ID_START);
+    hotkeys->registerHotkey(settings.value("reset", "Meta+F2").toString(), ID_RESET);
+    connect(hotkeys, &UGlobalHotkeys::activated, [this](size_t id) {
+        if (id == ID_START)
+            on_pushButton_clicked();
+        else if (id == ID_RESET)
+            on_btnReset_clicked();
+    });
 }
 
 MainWindow::~MainWindow()
 {
+    hotkeys->unregisterAllHotkeys();
     QSettings settings;
     if (running) tStop = QDateTime::currentDateTime();
     qint64 millis = tStart.msecsTo(tStop);

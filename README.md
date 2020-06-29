@@ -1,5 +1,5 @@
 # Simple Timer
-For speedrunning and stuff, no hotkeys yet
-Also probably should have been QSimpleTimer since it's an Qt application
+For speedrunning and stuff, hotkeys default to Win+F1, Win+F2.
 
-Build with qmake or Qt Creator
+Build with qmake or Qt Creator.
+Linux make requires private headers (qtbase5-private-dev)
