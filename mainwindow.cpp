@@ -84,6 +84,7 @@ void MainWindow::on_pushButton_clicked()
         if (ended) {
             qDebug("start");
             tStart = now;
+            ended = false;
         } else {
             qDebug("continue");
             qint64 millis = tStart.msecsTo(tStop);
