@@ -149,6 +149,7 @@ void MainWindow::on_btnSet_clicked()
         startOffset = -1 * millis;
         auto now = QDateTime::currentDateTimeUtc();
         tStart = now.addMSecs(startOffset);
+        tStop = now;
         auto oldRunning = running;
         running = true;
         update_timer(); // show immediately
