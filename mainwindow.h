@@ -23,12 +23,15 @@ private slots:
 
     void on_btnReset_clicked();
 
+    void on_btnSet_clicked();
+
 private:
     Ui::MainWindow *ui;
     QDateTime tStart;
     QDateTime tStop;
     bool running = false;
     bool ended = false;
+    qint64 startOffset = 0;
     UGlobalHotkeys* hotkeys;
 };
 #endif // MAINWINDOW_H

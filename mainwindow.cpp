@@ -1,8 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QTimer>
+#include <QDebug>
+#include <QInputDialog>
+#include <QMessageBox>
 #include <QSettings>
+#include <QTimer>
 
 enum HOTKEY_ID {
     ID_START=1,
@@ -59,6 +62,11 @@ void MainWindow::update_timer()
     if (!running) return;
     auto now = QDateTime::currentDateTimeUtc();
     qint64 millis = tStart.msecsTo(now); // +50 for rounding
+    const char* sign = "";
+    if (millis < 0) {
+        sign = "-";
+        millis *= -1;
+    }
     qint64 hrs = millis/1000/60/60;
     millis -= hrs*1000*60*60;
     qint64 mins = millis/1000/60;
@@ -67,9 +75,17 @@ void MainWindow::update_timer()
     millis -= secs*1000;
     qint64 tenths = millis/100;
 
-    QString fmt = "%1:%2:%3.%4";
-    const QChar pad = '0';
-    ui->pushButton->setText(fmt.arg(hrs,1,10,pad).arg(mins,2,10,pad).arg(secs,2,10,pad).arg(tenths,1,10,pad));
+    if (hrs == 0 && *sign) {
+        // special case to display "- mm:ss.f", if possible, which aligns better
+        QString fmt = "%1 %2:%3.%4";
+        const QChar pad = '0';
+        ui->pushButton->setText(fmt.arg(sign).arg(mins,2,10,pad).arg(secs,2,10,pad).arg(tenths,1,10,pad));
+    } else {
+        // default case, either "-h:mm:ss.f" or "h:mm:ss.f"
+        QString fmt = "%1%2:%3:%4.%5";
+        const QChar pad = '0';
+        ui->pushButton->setText(fmt.arg(sign).arg(hrs,1,10,pad).arg(mins,2,10,pad).arg(secs,2,10,pad).arg(tenths,1,10,pad));
+    }
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -83,12 +99,12 @@ void MainWindow::on_pushButton_clicked()
     } else {
         if (ended) {
             qDebug("start");
-            tStart = now;
+            tStart = now.addMSecs(startOffset);
             ended = false;
         } else {
             qDebug("continue");
             qint64 millis = tStart.msecsTo(tStop);
-            tStart = now.addMSecs(-1*millis);
+            tStart = now.addMSecs(-1 * millis);
         }
         running = true;
         update_timer(); // first time
@@ -103,4 +119,39 @@ void MainWindow::on_btnReset_clicked()
     running = true;
     update_timer(); // clear display
     running = false;
+}
+
+void MainWindow::on_btnSet_clicked()
+{
+    bool ok;
+    QString text = QInputDialog::getText(this, tr("Enter time"), "h:mm:ss.f: ", QLineEdit::Normal, "0:00:00.0", &ok);
+    if (ok) {
+        qDebug("set %s\n", text.toStdString().c_str());
+        auto parts = text.split(":");
+        if (parts.length() > 3) {
+            QMessageBox::critical(this, tr("Error"), tr("Invalid time format!"));
+        }
+        qint64 millis = 0;
+        for (int i=0; i<parts.length(); i++) {
+            millis *= 60;
+            if (i == parts.length() - 1) {
+                // seconds has comma
+                millis += (qint64)(parts[i].toDouble(&ok) * 1000);
+            } else {
+                // others are ints
+                millis += (qint64)parts[i].toInt(&ok) * 1000;
+            }
+            if (!ok) {
+                QMessageBox::critical(this, tr("Error"), tr("Invalid time format!"));
+                return;
+            }
+        }
+        startOffset = -1 * millis;
+        auto now = QDateTime::currentDateTimeUtc();
+        tStart = now.addMSecs(startOffset);
+        auto oldRunning = running;
+        running = true;
+        update_timer(); // show immediately
+        running = oldRunning;
+    }
 }
